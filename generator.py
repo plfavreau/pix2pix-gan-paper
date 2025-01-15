@@ -1,7 +1,8 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils import cnn_block
+from utils import cnn_block, tcnn_block
 
 
 class Generator(nn.Module):
@@ -16,6 +17,17 @@ class Generator(nn.Module):
         self.e6 = cnn_block(gf_dim * 8, gf_dim * 8, 4, 2, 1)
         self.e7 = cnn_block(gf_dim * 8, gf_dim * 8, 4, 2, 1)
         self.e8 = cnn_block(gf_dim * 8, gf_dim * 8, 4, 2, 1, first_layer=True)
+
+        self.d1 = tcnn_block(gf_dim * 8, gf_dim * 8, 4, 2, 1)
+        self.d2 = tcnn_block(gf_dim * 8 * 2, gf_dim * 8, 4, 2, 1)
+        self.d3 = tcnn_block(gf_dim * 8 * 2, gf_dim * 8, 4, 2, 1)
+        self.d4 = tcnn_block(gf_dim * 8 * 2, gf_dim * 8, 4, 2, 1)
+        self.d5 = tcnn_block(gf_dim * 8 * 2, gf_dim * 4, 4, 2, 1)
+        self.d6 = tcnn_block(gf_dim * 4 * 2, gf_dim * 2, 4, 2, 1)
+        self.d7 = tcnn_block(gf_dim * 2 * 2, gf_dim * 1, 4, 2, 1)
+        self.d8 = tcnn_block(gf_dim * 1 * 2, c_dim, 4, 2, 1, first_layer=True)
+
+        self.tanh = nn.Tanh()
 
     def forward(self, x):
         e1 = self.e1(x)
@@ -42,4 +54,28 @@ class Generator(nn.Module):
         e8 = self.e8(e7_bis)
         e8_bis = F.relu(e8)
 
-        return e8_bis
+        d1 = torch.cat([F.dropout(self.d1(e8_bis), 0.5, training=True), e7], dim=1)
+        d1_bis = F.relu(d1)
+
+        d2 = torch.cat([F.dropout(self.d2(d1_bis), 0.5, training=True), e6], dim=1)
+        d2_bis = F.relu(d2)
+
+        d3 = torch.cat([F.dropout(self.d3(d2_bis), 0.5, training=True), e5], dim=1)
+        d3_bis = F.relu(d3)
+
+        d4 = torch.cat([self.d4(d3_bis), e4], dim=1)
+        d4_bis = F.relu(d4)
+
+        d5 = torch.cat([self.d5(d4_bis), e3], dim=1)
+        d5_bis = F.relu(d5)
+
+        d6 = torch.cat([self.d6(d5_bis), e2], dim=1)
+        d6_bis = F.relu(d6)
+
+        d7 = torch.cat([self.d7(d6_bis), e1], dim=1)
+        d7_bis = F.relu(d7)
+
+        d8 = self.d8(d7_bis)
+        d8_bis = self.tanh(d8)
+
+        return d8_bis
