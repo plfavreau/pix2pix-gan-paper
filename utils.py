@@ -1,5 +1,5 @@
-import torch
 import torch.nn as nn
+
 
 def cnn_block(
     in_channels, out_channels, kernel_size, stride=1, padding=0, first_layer=False
@@ -25,6 +25,7 @@ def cnn_block(
             ),
             nn.BatchNorm2d(out_channels, momentum=0.1, eps=1e-5),
         )
+
 
 def tcnn_block(
     in_channels,
@@ -66,4 +67,4 @@ def tcnn_block(
                 output_padding=output_padding,
             ),
             nn.BatchNorm2d(out_channels, momentum=0.1, eps=1e-5),
-        ) 
+        )
