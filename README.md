@@ -34,3 +34,5 @@ pip install -r requirements.txt
 ```bash
 python main.py
 ```
+
+Takes ~less than two hours of training on a single Titan X GPU
